@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>GEONOV VISUAL</title>
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#0a0a0c;color:#d4d4d8;font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{display:flex;flex-direction:column;overscroll-behavior:none}
+button,select,input,textarea{font:inherit;color:#e4e4e7}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:#0d0d0f;border-bottom:1px solid #ffffff1a}
+h1{margin:0;font-size:14px;letter-spacing:.2em;color:#fff}
+#pn{flex:1;text-align:center;color:#a1a1aa;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#loc{font-size:11px;color:#71717a}
+.b{background:#ffffff0d;border:1px solid #ffffff1a;border-radius:6px;padding:6px 10px;cursor:pointer;white-space:nowrap;flex:none}
+.b:hover{background:#ffffff1a}.b.on{background:#ffffff26;border-color:#ffffff4d}.b:disabled{opacity:.4;cursor:not-allowed}
+.b:focus-visible,.i:focus-visible{outline:2px solid #38bdf8}
+.i{width:100%;background:#0006;border:1px solid #ffffff1a;border-radius:6px;padding:6px 8px}
+.i:focus{border-color:#fff6;outline:0}.bad{border-color:#ef4444!important}
+#tb{display:flex;gap:6px;align-items:center;padding:6px 8px;overflow-x:auto;background:#0b0b0d;border-bottom:1px solid #ffffff1a}
+#tb .i{width:auto;flex:none}#q{width:170px!important;margin-left:auto}
+#wrap{flex:1;min-height:0;display:flex;position:relative}
+main{flex:1;min-width:0;position:relative}
+#cy{position:absolute;inset:0}
+#zoom{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:6px;z-index:5}
+#st{position:absolute;left:12px;bottom:12px;font-size:11px;color:#d4d4d8;background:#000a;border-radius:99px;padding:2px 10px;pointer-events:none;z-index:5}
+#zoom .b{background:#18181be6}
+#hint{display:none;position:absolute;left:50%;top:12px;transform:translateX(-50%);background:#000c;border:1px solid #fff3;border-radius:99px;padding:4px 12px;font-size:12px;z-index:5}
+aside{display:none;flex-direction:column;background:#111113;border-left:1px solid #ffffff1a;width:320px;flex:none;min-height:0}
+aside.open{display:flex}
+#pb{overflow-y:auto;padding:12px;flex:1}
+.ah{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #ffffff1a;font-weight:600;color:#fff}
+label{display:block;font-size:12px;color:#a1a1aa;margin:10px 0 4px}
+.row{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12px}.row>span{flex:1}
+.row input[type=color]{width:34px;height:26px;padding:0;border:1px solid #ffffff1a;background:none;border-radius:4px;cursor:pointer;flex:none}
+.row .hex{width:88px;flex:none;font-family:ui-monospace,monospace;font-size:12px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+h3{font-size:12px;font-weight:600;color:#a1a1aa;margin:16px 0 4px}
+p.m{font-size:12px;color:#71717a;margin:4px 0}
+.full{width:100%;margin-top:6px}
+#toast{display:none;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#18181b;border:1px solid #fff3;border-radius:6px;padding:8px 16px;z-index:50;max-width:90vw}
+@media(max-width:899px){#loc{display:none}}
+@media(max-width:767px){aside{position:absolute;left:0;right:0;bottom:0;width:auto;max-height:68%;border-left:0;border-top:1px solid #ffffff1a;z-index:20;padding-bottom:env(safe-area-inset-bottom)}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header><h1>GEONOV VISUAL</h1><span id="pn"></span><div style="display:flex;align-items:center;gap:8px"><span id="loc" data-t="loc"></span><button class="b" id="lang">EN</button></div></header>
+<div id="tb">
+  <button class="b" id="bProj" data-t="tb.project"></button>
+  <button class="b" id="bNode" data-t="tb.node"></button>
+  <button class="b" id="bLink" data-t="tb.link"></button>
+  <button class="b" id="bData" data-t="tb.io"></button>
+  <button class="b" id="bLook" data-t="tb.look"></button>
+  <select class="i" id="lay" aria-label="Layout"></select>
+  <button class="b" id="bRe" data-ti="tb.re">⟳</button>
+  <button class="b" id="bUndo" data-ti="tb.undo">↶</button>
+  <button class="b" id="bRedo" data-ti="tb.redo">↷</button>
+  <button class="b" id="bFit" data-ti="tb.fit">◎</button>
+  <button class="b" id="bFull" data-ti="tb.full">⛶</button>
+  <input class="i" id="q" data-p="tb.search" type="search">
+</div>
+<div id="wrap">
+  <main>
+    <div id="cy" role="application"></div>
+    <div id="zoom"><button class="b" id="zi" data-ti="tb.zi">+</button><button class="b" id="zo" data-ti="tb.zo">−</button><button class="b" id="zf" data-ti="tb.fit">◎</button><button class="b" id="zu" data-ti="tb.full">⛶</button></div>
+    <div id="hint"></div><div id="st"></div>
+  </main>
+  <aside><div class="ah"><span id="pt"></span><button class="b" id="px" aria-label="Close">✕</button></div><div id="pb"></div></aside>
+</div>
+<div id="toast" role="alert"></div>
+<input type="file" id="imp" accept=".json,application/json" hidden>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+<script>
+(()=>{
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+if(typeof cytoscape==='undefined'){
+  $('#cy').innerHTML='<p style="padding:24px;max-width:520px">Не удалось загрузить Cytoscape.js с cdnjs.cloudflare.com. Проверьте интернет и обновите страницу.<br><br>Could not load Cytoscape.js from cdnjs.cloudflare.com. Check your connection and reload.</p>';return}
+
+/* ---------- Тексты RU / EN ---------- */
+const T={
+loc:['Проекты хранятся только в вашем браузере','Projects are stored only in your browser'],
+'tb.project':['Проекты','Projects'],'tb.node':['Добавить узел','Add node'],'tb.link':['Добавить связь','Add link'],'tb.io':['Импорт / экспорт','Import / export'],'tb.look':['Внешний вид','Appearance'],
+'tb.search':['Поиск по узлам','Search nodes'],'tb.undo':['Отменить','Undo'],'tb.redo':['Повторить','Redo'],'tb.fit':['Центрировать','Center'],'tb.full':['Полный экран','Fullscreen'],
+'tb.zi':['Приблизить','Zoom in'],'tb.zo':['Отдалить','Zoom out'],'tb.re':['Пересчитать расположение','Re-run layout'],
+'layout.normal':['Обычное','Normal'],'layout.circle':['Круговое','Circular'],'layout.tree':['Иерархическое','Hierarchical'],'layout.force':['Силовое','Force'],
+'type.domain':['Домен','Domain'],'type.ip':['IP-адрес','IP address'],'type.email':['Email','Email'],'type.username':['Имя пользователя','Username'],'type.org':['Организация','Organization'],
+'type.url':['URL','URL'],'type.hash':['Хеш файла','File hash'],'type.phone':['Телефон','Phone'],'type.custom':['Другое','Custom'],
+'d.title':['Объект','Object'],'d.name':['Название','Name'],'d.type':['Тип','Type'],'d.desc':['Описание','Description'],'d.source':['Источник данных','Data source'],'d.added':['Добавлен','Added'],
+'d.color':['Свой цвет','Own color'],'d.reset':['Сбросить','Reset'],'d.notes':['Заметки','Notes'],'d.links':['Связанные объекты','Linked objects'],'d.count':['связей','links'],
+'d.addlink':['Связать с…','Link to…'],'d.center':['Центральный узел','Central node'],'d.delete':['Удалить узел','Delete node'],'d.none':['Связей пока нет','No links yet'],'d.unlink':['Удалить связь','Remove link'],
+'a.live':['Изменения применяются к графу сразу.','Changes apply to the graph instantly.'],'a.themes':['Темы','Themes'],'a.colors':['Цвета графа','Graph colors'],
+'a.bg':['Фон','Background'],'a.center':['Центральный узел','Central node'],'a.node':['Обычные узлы','Regular nodes'],'a.selected':['Выбранный узел','Selected node'],'a.line':['Линии связей','Links'],'a.text':['Подписи','Labels'],
+'a.types':['Цвета категорий','Category colors'],'a.sizes':['Размеры','Sizes'],'a.size':['Размер узлов','Node size'],'a.width':['Толщина линий','Line width'],'a.opacity':['Прозрачность линий','Line opacity'],'a.font':['Размер шрифта','Font size'],
+'a.forces':['Расположение и анимация','Layout and animation'],'a.spacing':['Расстояние между узлами','Node spacing'],'a.repulsion':['Отталкивание','Repulsion'],'a.attraction':['Притяжение','Attraction'],'a.speed':['Скорость анимации','Animation speed'],
+'a.bytype':['Формы и цвета по типам','Shapes and colors by type'],'a.labels':['Показывать подписи','Show labels'],'a.arrows':['Стрелки направления','Direction arrows'],'a.animate':['Анимация','Animation'],
+'theme.custom':['Custom','Custom'],
+'p.name':['Название проекта','Project name'],'p.create':['Создать','Create'],'p.placeholder':['Название нового проекта','New project name'],'p.confirm':['Удалить проект вместе со всеми узлами?','Delete this project with all its nodes?'],
+'p.delete':['Удалить проект','Delete project'],'p.notes':['Заметки к проекту','Project notes'],'p.untitled':['Без названия','Untitled'],'proj.demo':['Демо-проект','Demo project'],
+'p.privacy':['Проекты хранятся локально в этом браузере (IndexedDB). Данные никуда не отправляются.','Projects are stored locally in this browser (IndexedDB). No data is sent anywhere.'],
+'p.demo':['Связи добавлены вручную или созданы демо-данными и не подтверждают реальную связь объектов.','Links were added by hand or come from demo data; they do not confirm a real-world relationship.'],
+'io.export':['Экспорт','Export'],'io.json':['Скачать JSON','Download JSON'],'io.png':['Скачать PNG','Download PNG'],'io.bg':['Фон PNG','PNG background'],'io.dark':['Тёмный','Dark'],'io.light':['Светлый','Light'],
+'io.import':['Импорт JSON','Import JSON'],'io.choose':['Выбрать файл','Choose file'],'io.sample':['Скачать пример JSON','Download sample JSON'],
+'io.format':['Нужен массив nodes (id, label; необязательно type, description, source, color, center) и массив edges (source, target). Импорт создаёт новый проект.','Needs a nodes array (id, label; optional type, description, source, color, center) and an edges array (source, target). Import creates a new project.'],
+'err.json':['Не удалось прочитать файл: это не корректный JSON.','Could not read the file: it is not valid JSON.'],'err.struct':['Неверная структура: нужен объект с массивом nodes.','Invalid structure: an object with a nodes array is required.'],
+'err.node':['У каждого узла должны быть id и непустое поле label.','Every node needs an id and a non-empty label.'],'err.dupid':['В файле повторяется id узла.','A node id is repeated in the file.'],
+'err.edge':['Связь ссылается на узел, которого нет в nodes.','An edge refers to a node missing from nodes.'],'err.dup':['Эти объекты уже связаны.','These objects are already linked.'],
+'err.save':['Не удалось сохранить в браузере. Экспортируйте JSON, чтобы не потерять данные.','Could not save to the browser. Export JSON to keep your data.'],
+'err.load':['Не удалось прочитать сохранённые проекты. Открыт демо-проект.','Could not read saved projects. The demo project is open.'],'err.full':['Браузер не разрешил полноэкранный режим.','The browser did not allow fullscreen mode.'],
+'ok.import':['Проект импортирован','Project imported'],'new.node':['Новый объект','New object'],'src.manual':['Добавлено вручную','Added manually'],
+'demo.d':['Вымышленный демонстрационный объект','Fictional demo object'],'demo.s':['Демо-данные (вымышленные)','Demo data (fictional)'],
+'link.hint1':['Выберите первый узел','Pick the first node'],'link.hint2':['Выберите второй узел','Pick the second node'],
+'stat.nodes':['Узлов','Nodes'],'stat.links':['Связей','Links'],'stat.cats':['Категорий','Categories']};
+const TH_NAMES={spiderfoot:'SpiderFoot',spiderfootdark:'SpiderFoot Black'};
+let lang=localStorage.getItem('gv:lang')==='en'?'en':'ru';
+const t=k=>T[k]?T[k][lang==='en'?1:0]:k;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- Данные по умолчанию ---------- */
+const TY=['domain','ip','email','username','org','url','hash','phone','custom'];
+const SH={domain:'ellipse',ip:'diamond',email:'round-rectangle',username:'triangle',org:'hexagon',url:'pentagon',hash:'octagon',phone:'star',custom:'barrel'};
+const TC={domain:'#4f8cff',ip:'#f59e0b',email:'#ec6aa6',username:'#a78bfa',org:'#2dd4bf',url:'#38bdf8',hash:'#94a3b8',phone:'#facc15',custom:'#cbd5e1'};
+const SF={byType:false,nodeSize:9,lineWidth:1,lineOpacity:.95,fontSize:10,center:'#e53935'};
+const TH={spiderfoot:{...SF,bg:'#ffffff',node:'#111111',selected:'#2563eb',line:'#cfcfcf',text:'#1a1a1a'},spiderfootdark:{...SF,bg:'#000000',node:'#f4f4f5',selected:'#3b82f6',line:'#4a4a4f',text:'#e4e4e7'}};
+const DS={...TH.spiderfoot,types:TC,spacing:150,repulsion:16000,attraction:120,speed:1,labels:true,arrows:false,animate:true};
+const COL=[['bg','a.bg'],['center','a.center'],['node','a.node'],['selected','a.selected'],['line','a.line'],['text','a.text']];
+const NUM=[['nodeSize','a.size',6,40,1],['lineWidth','a.width',.5,6,.1],['lineOpacity','a.opacity',.1,1,.05],['fontSize','a.font',8,24,1],['spacing','a.spacing',30,250,5],['repulsion','a.repulsion',1000,30000,500],['attraction','a.attraction',20,500,10],['speed','a.speed',.25,3,.25]];
+const BOOL=[['byType','a.bytype'],['animate','a.animate'],['labels','a.labels'],['arrows','a.arrows']];
+const uid=()=>Math.random().toString(36).slice(2,10),today=()=>new Date().toISOString().slice(0,10),clone=o=>JSON.parse(JSON.stringify(o));
+const mkNode=(id,label,type,x)=>({id,label,type,description:'',source:'',added:today(),notes:'',...x});
+const blank=name=>({id:uid(),name,nodes:[],edges:[],style:clone(DS),theme:'spiderfoot',layout:'force',notes:''});
+const ND=[['c','example-corp.test','domain'],['d1','mail.example-corp.test','domain'],['d2','api.example-corp.test','domain'],['d3','cdn.example-corp.test','domain'],['d4','blog.example-corp.test','domain'],
+['i1','203.0.113.10','ip'],['i2','203.0.113.25','ip'],['i3','198.51.100.7','ip'],['e1','admin@example-corp.test','email'],['e2','press@example-corp.test','email'],['u1','demo_admin','username'],['u2','demo_editor','username'],
+['o1','Example Corp (вымышл.)','org'],['o2','Sample Hosting Ltd (вымышл.)','org'],['l1','https://example-corp.test/login','url'],['l2','https://blog.example-corp.test/about','url'],['h1','9f86d081884c7d65…','hash'],['p1','+0 000 000-00-00','phone']];
+const NE='c-d1 c-d2 c-d3 c-d4 d1-i1 d2-i1 d3-i2 d4-i3 c-o1 i1-o2 i2-o2 o1-e1 o1-e2 e1-u1 e2-u2 d4-u2 c-l1 d4-l2 l1-h1 o1-p1 u1-i3';
+const demoP=()=>{const p=blank(t('proj.demo'));p.nodes=ND.map(([id,l,ty])=>mkNode(id,l,ty,{description:t('demo.d'),source:t('demo.s'),center:id==='c'}));
+  p.edges=NE.split(' ').map(s=>{const[a,b]=s.split('-');return{id:uid(),source:a,target:b}});return p};
+
+/* ---------- Хранилище IndexedDB ---------- */
+let dbp;const idb=()=>dbp||(dbp=new Promise((ok,no)=>{const r=indexedDB.open('geonov-visual',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}));
+const kvGet=async k=>{const d=await idb();return new Promise((ok,no)=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)})};
+const kvSet=async(k,v)=>{const d=await idb();return new Promise((ok,no)=>{const x=d.transaction('kv','readwrite');x.objectStore('kv').put(v,k);x.oncomplete=ok;x.onerror=()=>no(x.error)})};
+let saveT;const save=()=>{clearTimeout(saveT);saveT=setTimeout(async()=>{try{await kvSet('projects',projects);await kvSet('current',cur)}catch(e){toast(t('err.save'))}},400)};
+let tt;const toast=m=>{const e=$('#toast');e.textContent=m;e.style.display='block';clearTimeout(tt);tt=setTimeout(()=>e.style.display='none',4500)};
+
+/* ---------- Состояние ---------- */
+let projects=[],cur=null,sel=null,query='',linkOn=false,linkFrom=null,past=[],future=[],panelName=null;
+const P=()=>projects.find(p=>p.id===cur);
+const snap=p=>clone({nodes:p.nodes,edges:p.edges});
+
+/* ---------- Граф ---------- */
+const cy=cytoscape({container:$('#cy'),minZoom:.1,maxZoom:4,wheelSensitivity:.3,boxSelectionEnabled:false});
+new ResizeObserver(()=>cy.resize()).observe($('#cy'));
+cy.on('tap',e=>{if(e.target===cy)pick(null);else if(e.target.isNode())pick(e.target.id())});
+const savePos=()=>{const p=P();if(!p)return;cy.nodes().forEach(n=>{const o=p.nodes.find(x=>x.id===n.id());if(o)o.pos={...n.position()}});save()};
+cy.on('dragfree','node',savePos);cy.on('layoutstop',savePos);
+
+const sheet=s=>[
+{selector:'node',style:{'background-color':'data(color)',width:'data(size)',height:'data(size)',shape:'data(shape)',label:s.labels?'data(label)':'',color:s.text,'font-size':s.fontSize,'font-family':'Helvetica Neue,Arial,sans-serif','text-halign':'right','text-valign':'center','text-margin-x':6,'text-max-width':160,'text-wrap':'ellipsis','border-width':0,'transition-property':'opacity','transition-duration':s.animate?'0.25s':'0s'}},
+{selector:'node[?center]',style:{'background-color':s.center}},
+{selector:'edge',style:{width:s.lineWidth,'line-color':s.line,'line-opacity':s.lineOpacity,'curve-style':'straight','target-arrow-shape':s.arrows?'triangle':'none','target-arrow-color':s.line,'arrow-scale':.8,'transition-property':'opacity','transition-duration':s.animate?'0.25s':'0s'}},
+{selector:'node:selected',style:{'background-color':s.selected,'border-width':4,'border-color':s.selected,'border-opacity':.25}},
+{selector:'.match',style:{'border-width':4,'border-color':s.selected,'border-opacity':.35}},
+{selector:'.pend',style:{'border-width':3,'border-style':'dashed','border-color':s.selected}},
+{selector:'edge.hl',style:{'line-color':s.selected,'target-arrow-color':s.selected,'line-opacity':1,width:s.lineWidth*2}},
+{selector:'.dim',style:{opacity:.12}}];
+
+const layout=()=>{const p=P(),s=p.style,l=p.layout,c=cy.nodes('[?center]');
+  const base={animate:s.animate,animationDuration:s.animate?700/s.speed:0,fit:true,padding:50};
+  const o=l==='force'?{name:'cose',...base,nodeRepulsion:()=>s.repulsion,idealEdgeLength:()=>s.spacing,edgeElasticity:()=>s.attraction,gravity:.4,numIter:1200,nodeDimensionsIncludeLabels:true}
+  :l==='circle'?{name:'circle',...base,spacingFactor:s.spacing/70}
+  :l==='tree'?{name:'breadthfirst',...base,directed:false,roots:c.nonempty()?c:undefined,spacingFactor:s.spacing/70}
+  :{name:'concentric',...base,concentric:n=>n.data('center')?100:n.degree(),levelWidth:()=>2,minNodeSpacing:s.spacing/3,spacingFactor:s.spacing/80};
+  cy.layout(o).run()};
+let rt;const relayoutSoon=()=>{clearTimeout(rt);rt=setTimeout(layout,300)};
+
+const hl=()=>{const q=query.trim().toLowerCase();
+  cy.batch(()=>{cy.elements().removeClass('dim hl match pend');
+    if(q){const m=cy.nodes().filter(n=>['label','type','description','source'].some(k=>String(n.data(k)||'').toLowerCase().includes(q)));cy.elements().addClass('dim');m.removeClass('dim').addClass('match')}
+    else if(sel&&cy.getElementById(sel).nonempty()){const n=cy.getElementById(sel);cy.elements().not(n.closedNeighborhood()).addClass('dim');n.connectedEdges().addClass('hl')}
+    if(linkFrom)cy.getElementById(linkFrom).addClass('pend')});
+  cy.nodes().unselect();if(sel)cy.getElementById(sel).select()};
+
+const stats=()=>{const p=P();$('#st').textContent=`${t('stat.nodes')}: ${p.nodes.length} · ${t('stat.links')}: ${p.edges.length} · ${t('stat.cats')}: ${new Set(p.nodes.map(n=>n.type)).size}`};
+const btns=()=>{$('#bUndo').disabled=!past.length;$('#bRedo').disabled=!future.length};
+
+const sync=()=>{const p=P(),s=p.style,bt=s.byType!==false,deg={};
+  p.edges.forEach(e=>{deg[e.source]=(deg[e.source]||0)+1;deg[e.target]=(deg[e.target]||0)+1});
+  const ex=cy.extent(),mid={x:(ex.x1+ex.x2)/2,y:(ex.y1+ex.y2)/2},empty=cy.nodes().empty();
+  const ids=new Set(p.nodes.map(n=>n.id)),eids=new Set(p.edges.filter(e=>ids.has(e.source)&&ids.has(e.target)).map(e=>e.id));
+  cy.batch(()=>{
+    cy.nodes().filter(n=>!ids.has(n.id())).remove();cy.edges().filter(e=>!eids.has(e.id())).remove();
+    p.nodes.forEach(n=>{const d={label:n.label,type:n.type,description:n.description,source:n.source,center:!!n.center,shape:bt?SH[n.type]:'ellipse',
+      color:n.color||(bt&&n.type!=='custom'?s.types[n.type]:s.node),size:bt?(n.center?s.nodeSize*2:s.nodeSize*(1+Math.min(deg[n.id]||0,8)*.1)):(n.center?s.nodeSize*1.4:s.nodeSize)};
+      const x=cy.getElementById(n.id);
+      if(x.empty())cy.add({group:'nodes',data:{id:n.id,...d},position:n.pos||{x:mid.x+(Math.random()-.5)*80,y:mid.y+(Math.random()-.5)*80}});else x.data(d)});
+    p.edges.forEach(e=>{if(eids.has(e.id)&&cy.getElementById(e.id).empty())cy.add({group:'edges',data:{id:e.id,source:e.source,target:e.target}})});
+  });
+  cy.style(sheet(s));$('#cy').style.background=s.bg;
+  const miss=p.nodes.some(n=>!n.pos);
+  if(miss&&empty)layout();else if(miss)savePos();else if(empty&&p.nodes.length)cy.fit(undefined,50);
+  hl();stats()};
+
+/* ---------- Действия ---------- */
+const commit=fn=>{const p=P();past.push(snap(p));if(past.length>50)past.shift();future=[];fn(p);sync();save();btns()};
+const afterHist=()=>{sync();save();btns();if(sel&&!P().nodes.some(n=>n.id===sel)){sel=null;hl()}renderPanel()};
+const undo=()=>{if(!past.length)return;const p=P();future.push(snap(p));Object.assign(p,past.pop());afterHist()};
+const redo=()=>{if(!future.length)return;const p=P();past.push(snap(p));Object.assign(p,future.pop());afterHist()};
+const addNode=()=>{const p=P(),n=mkNode(uid(),t('new.node'),'custom',{source:t('src.manual'),center:!p.nodes.length});commit(()=>p.nodes.push(n));sel=n.id;hl();openPanel('details')};
+const removeNode=id=>{const p=P();commit(()=>{p.nodes=p.nodes.filter(n=>n.id!==id);p.edges=p.edges.filter(e=>e.source!==id&&e.target!==id)});sel=null;hl();if(panelName==='details')closePanel()};
+const addLink=(a,b)=>{const p=P();if(p.edges.some(e=>(e.source===a&&e.target===b)||(e.source===b&&e.target===a)))return toast(t('err.dup'));
+  commit(()=>p.edges.push({id:uid(),source:a,target:b}));if(panelName==='details')renderPanel()};
+const hint=()=>{const h=$('#hint');h.style.display=linkOn?'block':'none';h.textContent=t(linkFrom?'link.hint2':'link.hint1');$('#bLink').classList.toggle('on',linkOn)};
+const pick=id=>{
+  if(linkOn&&id){if(!linkFrom){linkFrom=id;hint();hl();return}
+    const a=linkFrom;linkOn=false;linkFrom=null;hint();if(a!==id)addLink(a,id);else hl();return}
+  sel=id;hl();if(id)openPanel('details');else if(panelName==='details')closePanel()};
+const fit=()=>cy.animate({fit:{eles:cy.elements(),padding:50},duration:300});
+const zoom=f=>cy.zoom({level:cy.zoom()*f,renderedPosition:{x:cy.width()/2,y:cy.height()/2}});
+const full=()=>{const r=document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();if(r)r.catch(()=>toast(t('err.full')))};
+const openProj=id=>{cur=id;sel=null;past=[];future=[];query='';$('#q').value='';linkOn=false;linkFrom=null;hint();cy.elements().remove();sync();save();btns();applyLang()};
+
+/* ---------- Панели ---------- */
+const PT={details:'d.title',appearance:'tb.look',projects:'tb.project',data:'tb.io'};
+const tbActive=()=>{$('#bProj').classList.toggle('on',panelName==='projects');$('#bData').classList.toggle('on',panelName==='data');$('#bLook').classList.toggle('on',panelName==='appearance')};
+const openPanel=n=>{panelName=n;$('aside').classList.add('open');renderPanel();tbActive()};
+const closePanel=()=>{panelName=null;$('aside').classList.remove('open');tbActive()};
+const togglePanel=n=>panelName===n?closePanel():openPanel(n);
+
+const details=()=>{const p=P(),n=p.nodes.find(x=>x.id===sel);
+  const ls=p.edges.filter(e=>e.source===n.id||e.target===n.id).map(e=>({e,o:p.nodes.find(x=>x.id===(e.source===n.id?e.target:e.source))})).filter(x=>x.o);
+  const free=p.nodes.filter(x=>x.id!==n.id&&!ls.some(l=>l.o.id===x.id));
+  return `<label>${t('d.name')}</label><input class="i" data-f="label" value="${esc(n.label)}">
+<label>${t('d.type')}</label><select class="i" data-f="type">${TY.map(k=>`<option value="${k}"${k===n.type?' selected':''}>${t('type.'+k)}</option>`).join('')}</select>
+<label>${t('d.desc')}</label><textarea class="i" rows="3" data-f="description">${esc(n.description)}</textarea>
+<label>${t('d.source')}</label><input class="i" data-f="source" value="${esc(n.source)}">
+<p class="m">${t('d.added')}: ${esc(n.added)}</p>
+<div class="row"><span>${t('d.color')}</span><input type="color" data-f="color" aria-label="${t('d.color')}" value="${n.color||'#cbd5e1'}">${n.color?`<button class="b" data-a="rc">${t('d.reset')}</button>`:''}</div>
+<div class="row"><input type="checkbox" data-f="center"${n.center?' checked':''}><span>${t('d.center')}</span></div>
+<label>${t('d.notes')}</label><textarea class="i" rows="3" data-f="notes">${esc(n.notes)}</textarea>
+<h3>${t('d.links')} · ${ls.length} ${t('d.count')}</h3>
+${ls.length?ls.map(({e,o})=>`<div class="row"><button class="b" style="flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis" data-a="go" data-id="${o.id}">${esc(o.label)}</button><button class="b" data-a="ul" data-id="${e.id}" title="${t('d.unlink')}" aria-label="${t('d.unlink')}">✕</button></div>`).join(''):`<p class="m">${t('d.none')}</p>`}
+${free.length?`<select class="i" data-a="al" aria-label="${t('d.addlink')}"><option value="">${t('d.addlink')}</option>${free.map(x=>`<option value="${x.id}">${esc(x.label)}</option>`).join('')}</select>`:''}
+<button class="b full" style="color:#fca5a5;border-color:#ef444466;margin-top:16px" data-a="del">${t('d.delete')}</button>`};
+
+const look=()=>{const p=P(),s=p.style;
+  const cr=(k,l,v)=>`<div class="row"><span>${l}</span><input type="color" data-c="${k}" value="${v}" aria-label="${l}"><input class="i hex" data-h="${k}" value="${v}" maxlength="7" spellcheck="false" aria-label="${l} HEX"></div>`;
+  const nm=([k,l,a,b,st])=>`<label>${t(l)}: <b data-v="${k}">${s[k]}</b></label><input type="range" data-n="${k}" min="${a}" max="${b}" step="${st}" value="${s[k]}" style="width:100%">`;
+  return `<p class="m">${t('a.live')}</p><h3>${t('a.themes')}</h3>
+<div class="g">${Object.keys(TH).map(k=>`<button class="b${p.theme===k?' on':''}" data-a="th" data-id="${k}">${TH_NAMES[k]}</button>`).join('')}</div>
+<h3>${t('a.colors')}</h3>${COL.map(([k,l])=>cr(k,t(l),s[k])).join('')}
+<h3>${t('a.types')}</h3>${TY.filter(k=>k!=='custom').map(k=>cr('types.'+k,t('type.'+k),s.types[k])).join('')}
+<h3>${t('a.sizes')}</h3>${NUM.slice(0,4).map(nm).join('')}
+<h3>${t('a.forces')}</h3>${NUM.slice(4).map(nm).join('')}
+<h3></h3>${BOOL.map(([k,l])=>`<div class="row"><input type="checkbox" data-b="${k}"${s[k]?' checked':''}><span>${t(l)}</span></div>`).join('')}`};
+
+const projs=()=>{const p=P();return `<p class="m">${t('p.privacy')}</p>
+<div class="row"><input class="i" id="npn" placeholder="${t('p.placeholder')}"><button class="b" data-a="np">${t('p.create')}</button></div>
+${projects.map(x=>`<div class="row"><button class="b${x.id===cur?' on':''}" style="flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis" data-a="op" data-id="${x.id}">${esc(x.name)} (${x.nodes.length})</button><button class="b" data-a="dp" data-id="${x.id}" ${projects.length<2?'disabled':''} title="${t('p.delete')}" aria-label="${t('p.delete')}">✕</button></div>`).join('')}
+<label>${t('p.name')}</label><input class="i" data-p="name" value="${esc(p.name)}">
+<label>${t('p.notes')}</label><textarea class="i" rows="5" data-p="notes">${esc(p.notes)}</textarea>
+<p class="m" style="margin-top:12px">${t('p.demo')}</p>`};
+
+const io=()=>`<h3>${t('io.export')}</h3><button class="b full" data-a="ej">${t('io.json')}</button>
+<label>${t('io.bg')}</label><select class="i" id="pbg"><option value="#0a0a0c">${t('io.dark')}</option><option value="#ffffff">${t('io.light')}</option></select>
+<button class="b full" data-a="ep">${t('io.png')}</button>
+<h3>${t('io.import')}</h3><p class="m">${t('io.format')}</p>
+<button class="b full" data-a="ch">${t('io.choose')}</button><button class="b full" data-a="es">${t('io.sample')}</button>`;
+
+function renderPanel(){
+  if(!panelName)return;
+  if(panelName==='details'&&!P().nodes.some(n=>n.id===sel)){closePanel();return}
+  $('#pt').textContent=t(PT[panelName]);
+  $('#pb').innerHTML=panelName==='details'?details():panelName==='appearance'?look():panelName==='projects'?projs():io()}
+
+/* ---------- События панелей ---------- */
+$('#pb').addEventListener('change',e=>{const el=e.target,d=el.dataset,p=P();
+  if(panelName==='details'){
+    if(d.f){const n=p.nodes.find(x=>x.id===sel);if(!n)return;const v=el.type==='checkbox'?el.checked:el.value;
+      if(d.f==='label'&&!v.trim()){el.value=n.label;return}
+      commit(()=>{if(d.f==='center'&&v)p.nodes.forEach(x=>x.center=false);n[d.f]=v});if(d.f==='color')renderPanel()}
+    else if(d.a==='al'&&el.value)addLink(sel,el.value)}
+  else if(panelName==='projects'&&d.p){if(d.p==='name'&&!el.value.trim()){el.value=p.name;return}p[d.p]=el.value.trim()&&d.p==='name'?el.value.trim():el.value;$('#pn').textContent=p.name;save()}});
+
+$('#pb').addEventListener('input',e=>{if(panelName!=='appearance')return;const el=e.target,d=el.dataset,p=P(),s=p.style;
+  if(d.c||d.h){const k=d.c||d.h;
+    if(d.h&&!/^#[0-9a-f]{6}$/i.test(el.value)){el.classList.add('bad');return}
+    el.classList.remove('bad');const v=el.value.toLowerCase();
+    if(k.startsWith('types.'))s.types[k.slice(6)]=v;else s[k]=v;
+    p.theme='custom';$$('[data-a=th]').forEach(b=>b.classList.toggle('on',b.dataset.id==='custom'));
+    $$(`[data-c="${k}"],[data-h="${k}"]`).forEach(x=>{if(x!==el)x.value=v});sync();save()}
+  else if(d.n){s[d.n]=+el.value;$(`[data-v="${d.n}"]`).textContent=el.value;sync();if(['spacing','repulsion','attraction'].includes(d.n))relayoutSoon();save()}
+  else if(d.b){s[d.b]=el.checked;sync();save()}});
+
+$('#pb').addEventListener('click',e=>{const b=e.target.closest('button[data-a]');if(!b)return;const p=P(),a=b.dataset.a,id=b.dataset.id,slug=p.name.replace(/[^\p{L}\p{N}_-]+/gu,'_')||'geonov-visual';
+  if(a==='rc'){commit(()=>{delete p.nodes.find(n=>n.id===sel).color});renderPanel()}
+  else if(a==='go')pick(id);
+  else if(a==='ul'){commit(()=>{p.edges=p.edges.filter(x=>x.id!==id)});renderPanel()}
+  else if(a==='del')removeNode(sel);
+  else if(a==='th'){p.theme=id;if(TH[id])Object.assign(p.style,TH[id]);sync();save();renderPanel()}
+  else if(a==='np'){const q=blank($('#npn').value.trim()||t('p.untitled'));projects.push(q);openProj(q.id)}
+  else if(a==='op')openProj(id);
+  else if(a==='dp'){if(confirm(t('p.confirm'))){projects=projects.filter(x=>x.id!==id);if(id===cur)openProj(projects[0].id);else{renderPanel();save()}}}
+  else if(a==='ej')dlJson(slug+'.json',{app:'GEONOV VISUAL',version:1,name:p.name,notes:p.notes,nodes:p.nodes,edges:p.edges,style:p.style});
+  else if(a==='ep')dl(slug+'.png',cy.png({full:true,scale:2,bg:$('#pbg').value}));
+  else if(a==='es')dlJson('sample.json',{nodes:[{id:'a',label:'example.test',type:'domain',center:true,description:'Вымышленный домен'},{id:'b',label:'203.0.113.5',type:'ip'},{id:'c',label:'admin@example.test',type:'email'}],edges:[{source:'a',target:'b'},{source:'a',target:'c'}]});
+  else if(a==='ch')$('#imp').click()});
+
+/* ---------- Импорт / экспорт ---------- */
+const dl=(name,href)=>{const a=document.createElement('a');a.href=href;a.download=name;document.body.appendChild(a);a.click();a.remove()};
+const dlJson=(name,obj)=>{const u=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));dl(name,u);setTimeout(()=>URL.revokeObjectURL(u),1000)};
+const parseGraph=txt=>{const j=JSON.parse(txt);if(!j||!Array.isArray(j.nodes))throw new Error('err.struct');
+  const ids=new Set();
+  const nodes=j.nodes.map(n=>{if(!n||n.id==null||typeof n.label!=='string'||!n.label.trim())throw new Error('err.node');
+    const id=String(n.id);if(ids.has(id))throw new Error('err.dupid');ids.add(id);
+    return mkNode(id,n.label,TY.includes(n.type)?n.type:'custom',{description:String(n.description??''),source:String(n.source??'import'),added:String(n.added??today()),notes:String(n.notes??''),color:/^#[0-9a-f]{6}$/i.test(n.color)?n.color:undefined,center:!!n.center})});
+  const edges=(Array.isArray(j.edges)?j.edges:[]).map(e=>{const s=String(e&&e.source),d=String(e&&e.target);if(!ids.has(s)||!ids.has(d))throw new Error('err.edge');return{id:uid(),source:s,target:d}});
+  return{nodes,edges}};
+$('#imp').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const g=parseGraph(await f.text()),q=blank(f.name.replace(/\.json$/i,'')||t('p.untitled'));q.nodes=g.nodes;q.edges=g.edges;projects.push(q);openProj(q.id);toast(t('ok.import'))}
+  catch(err){toast(t(err instanceof Error&&/^err\./.test(err.message)?err.message:'err.json'))}};
+
+/* ---------- Тулбар и горячие клавиши ---------- */
+$('#bProj').onclick=()=>togglePanel('projects');$('#bData').onclick=()=>togglePanel('data');$('#bLook').onclick=()=>togglePanel('appearance');
+$('#bNode').onclick=addNode;$('#bLink').onclick=()=>{linkOn=!linkOn;linkFrom=null;hint();hl()};
+$('#lay').onchange=e=>{P().layout=e.target.value;layout();save()};$('#bRe').onclick=layout;
+$('#bUndo').onclick=undo;$('#bRedo').onclick=redo;$('#bFit').onclick=$('#zf').onclick=fit;$('#bFull').onclick=$('#zu').onclick=full;
+$('#zi').onclick=()=>zoom(1.25);$('#zo').onclick=()=>zoom(.8);$('#px').onclick=closePanel;
+$('#q').oninput=e=>{query=e.target.value;hl();const m=cy.nodes('.match');if(query.trim()&&m.nonempty())cy.animate({fit:{eles:m,padding:120},duration:250})};
+$('#lang').onclick=()=>{lang=lang==='ru'?'en':'ru';localStorage.setItem('gv:lang',lang);applyLang()};
+addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const m=e.ctrlKey||e.metaKey,k=e.key.toLowerCase();
+  if(m&&k==='z'){e.preventDefault();e.shiftKey?redo():undo()}else if(m&&k==='y'){e.preventDefault();redo()}
+  else if(e.key==='Delete'&&sel)removeNode(sel);
+  else if(e.key==='Escape'){linkOn=false;linkFrom=null;hint();sel=null;hl()}});
+
+/* ---------- Язык ---------- */
+function applyLang(){
+  document.documentElement.lang=lang;$('#lang').textContent=lang==='ru'?'EN':'RU';
+  $$('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));
+  $$('[data-ti]').forEach(e=>{e.title=t(e.dataset.ti);e.setAttribute('aria-label',t(e.dataset.ti))});
+  $('#q').placeholder=t('tb.search');$('#q').setAttribute('aria-label',t('tb.search'));
+  $('#lay').innerHTML=['normal','circle','tree','force'].map(k=>`<option value="${k}">${t('layout.'+k)}</option>`).join('');
+  const p=P();if(p){$('#lay').value=p.layout;$('#pn').textContent=p.name;stats()}
+  hint();renderPanel()}
+
+/* ---------- Запуск ---------- */
+(async()=>{
+  try{const ps=await kvGet('projects'),c=await kvGet('current');if(ps&&ps.length){projects=ps;cur=ps.some(x=>x.id===c)?c:ps[0].id;if(ps.some(x=>x.style.byType===undefined)){ps.forEach(x=>{if(x.style.byType===undefined)x.style.byType=true});const d=demoP();projects.unshift(d);cur=d.id}}}
+  catch(e){toast(t('err.load'))}
+  if(!projects.length){const d=demoP();projects=[d];cur=d.id}
+  applyLang();sync();btns()})();
+})();
+</script>
+</body>
+</html>
